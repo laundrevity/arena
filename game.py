@@ -23,7 +23,8 @@ class Game:
 
         while self.current_battle.is_active:
             self.current_battle.tick()
+
             if self.current_battle.render:
-                self.canvas.draw()
+                self.canvas.draw(self.current_battle.units)
 
         print("battle done")

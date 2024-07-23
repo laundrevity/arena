@@ -1,5 +1,7 @@
 import pygame as pg
 
+from unit import Unit
+
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 WHITE = (255, 255, 255)
@@ -16,6 +18,12 @@ class Canvas:
         self.screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pg.display.set_caption(caption)
 
-    def draw(self):
+    def draw(self, units: list[Unit] = []):
         self.screen.fill(WHITE)
+
+        for unit in units:
+            # NOTE: assuming here that Unit has these methods! maybe make them abstract?
+            color = BLUE if unit.player else RED
+            pg.draw.circle(self.screen, color, unit.pos, unit.radius)
+
         pg.display.flip()
