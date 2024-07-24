@@ -36,9 +36,8 @@ class Battle:
 
                     if not self.paused:
                         if event.key == pg.K_t:
-                            if player.casting_ability:
-                                player.cancel_cast()
-                            player.start_casting("magic_missile")
+                            if not player.casting_ability:
+                                player.start_casting("magic_missile", enemy)
                         elif event.key == pg.K_1:
                             player.use_ability("snare", enemy)
                         elif event.key == pg.K_2:

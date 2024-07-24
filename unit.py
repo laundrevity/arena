@@ -6,6 +6,7 @@ from typing import Optional
 
 class Unit:
     projectiles: list[Projectile]
+    target: Optional["Unit"]  # Use a forward reference as a string
 
     def __init__(self, player: bool, initial_pos: list[float], max_hp: int = 100):
         self.pos = initial_pos
@@ -17,6 +18,7 @@ class Unit:
         self.current_hp = max_hp
         self.casting_ability: Optional[Ability] = None
         self.completed_ability: Optional[Ability] = None
+        self.target = None
         self.abilities = {
             "magic_missile": Ability(
                 "Magic Missile",
@@ -96,20 +98,27 @@ class Unit:
         direction = [target_pos[0] - self.pos[0], target_pos[1] - self.pos[1]]
         self.move(direction, dt)
 
-    def start_casting(self, ability_name: str):
+    def start_casting(self, ability_name: str, target: Optional["Unit"] = None):
         ability = self.abilities.get(ability_name)
+
         if ability and ability.can_use(time.time()):
             self.casting_ability = ability
             self.casting_ability.cast_time_elapsed = 0
+            # set target to remember for when cast completes
+            self.target = target
 
     def update_cast(self, dt: float):
         if self.casting_ability:
             self.casting_ability.cast_time_elapsed += dt
             if self.casting_ability.cast_time_elapsed >= self.casting_ability.cast_time:
+                if self.target is None:
+                    print("Cannot complete cast - no valid target!")
+                    return False
+
                 self.casting_ability.last_used = time.time()
                 self.projectiles.append(
-                    Projectile(self.pos, [400, 300], self.casting_ability.color)
-                )  # Example target
+                    Projectile(self.pos, self.target.pos, self.casting_ability.color)
+                )
                 self.completed_ability = self.casting_ability
                 self.casting_ability = None
                 return True  # indicate cast completion
