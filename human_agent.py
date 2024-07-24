@@ -28,4 +28,6 @@ class HumanAgent(Agent):
         if keys[pg.K_3]:
             actions.append("use_stun")
 
+        self.unit.logger.debug(f"choose_actions({game_state}) -> {actions}")
+
         return actions

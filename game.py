@@ -11,19 +11,19 @@ class Game:
     canvas: Canvas
     debug: bool
     logger: Logger
+    config: dict
 
-    def __init__(self, logger: Logger, debug: bool = False):
+    def __init__(self, logger: Logger, config: dict = None):
         self.current_battle = None
         self.canvas = Canvas()
-        self.debug = debug
         self.logger = logger
+        self.config = config
 
     def run(self):
         if self.current_battle is None:
             self.current_battle = self.setup_battle()
 
-        if self.debug:
-            self.logger.debug("starting new battle")
+        self.logger.debug("starting new battle")
 
         last_time = time.time()
 
@@ -36,74 +36,34 @@ class Game:
 
             if self.current_battle.render:
                 self.canvas.draw(self.current_battle.units, self.current_battle.paused)
-        if self.debug:
-            self.logger.debug("battle done")
+
+        self.logger.debug("battle done")
 
     def setup_battle(self) -> Battle:
-        self.logger.info("Setting up the battle in console...")
-        print("Choose battle type:")
-        print("1. Human vs AI")
-        print("2. AI vs AI")
-        battle_type = input("Enter 1 or 2: ")
+        if self.config:
+            battle_type = self.config.get("battle_type", 1)
+            player_role = self.config.get("player_role", 1)
+            ai_role = self.config.get("ai_role", 2)
 
-        if battle_type not in ["1", "2"]:
-            self.logger.warning(
-                f"Invalid input {battle_type} for battle type. Defaulting to Human vs AI."
-            )
-            battle_type = "1"
-
-        roles = ["caster", "melee"]
-        if battle_type == "1":
-            print("Choose your role: ")
-            print("1. Caster")
-            print("2. Melee")
-            player_role = input("Enter 1 or 2:")
-            if player_role not in ["1", "2"]:
-                self.logger.warning(
-                    f"Invalid input {player_role} for player role. Defaulting to caster."
+            roles = ["caster", "melee"]
+            if battle_type == 1:
+                return Battle(
+                    self.logger,
+                    player_role=roles[player_role - 1],
+                    ai_role=roles[ai_role - 1],
+                    ai_vs_ai=False,
                 )
-                player_role = "1"
-            player_role = roles[int(player_role) - 1]
-
-            print("Chooise AI role:")
-            print("1. Caster")
-            print("2. Melee")
-            ai_role = input("Enter 1 or 2:")
-            if ai_role not in ["1", "2"]:
-                self.logger.warning(
-                    f"Invalid input {ai_role} for AI role. Defaulting to melee."
+            elif battle_type == 2:
+                return Battle(
+                    self.logger,
+                    player_role=None,
+                    ai_role=roles[player_role - 1],
+                    ai2_role=roles[ai_role - 1],
+                    ai_vs_ai=True,
                 )
-                ai_role = "2"
-            ai_role = roles[int(ai_role) - 1]
 
-            return Battle(
-                self.logger, player_role=player_role, ai_role=ai_role, ai_vs_ai=False
-            )
-
-        elif battle_type == "2":
-            print("Choose role for 1st AI: ")
-            print("1. Caster")
-            print("2. Melee")
-            ai_role_1 = input("Enter 1 or 2:")
-            if ai_role_1 not in ["1", "2"]:
-                print("Invalid input. Defaulting to Caster.")
-            ai_role_1 = roles[int(ai_role_1) - 1]
-
-            print("Chooise role for 2nd AI:")
-            print("1. Caster")
-            print("2. Melee")
-            ai_role_2 = input("Enter 1 or 2:")
-            if ai_role_2 not in ["1", "2"]:
-                print("Invalid input. Defaulting to Melee.")
-            ai_role_2 = roles[int(ai_role_2) - 1]
-
-            return Battle(
-                self.logger,
-                player_role=None,
-                ai_role=ai_role_1,
-                ai2_role=ai_role_2,
-                ai_vs_ai=True,
-            )
+        else:
+            self.logger.error("Failed to find self.config so cannot setup battle!")
 
     def draw_debug_info(self):
         # Implement debug info display
