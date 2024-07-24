@@ -114,7 +114,7 @@ class Battle:
         elif ai_unit.role == "caster":
             if ai_unit.casting_ability is None:
                 for spell_name in ["magic_missile", "stun", "root", "snare"]:
-                    if ai_unit.can_use(spell_name, target):
+                    if ai_unit.can_use(spell_name):
                         ai_unit.start_casting(spell_name, target)
 
     def check_collision(self, projectile, target: Unit) -> bool:
