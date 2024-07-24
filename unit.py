@@ -110,8 +110,10 @@ class Unit:
         self.move(direction, dt)
 
     def start_casting(self, ability_name: str, target: Optional["Unit"] = None):
-        ability = self.abilities.get(ability_name)
+        if self.cc_effects["stun"] > 0:
+            return  # Cannot cast if stunned
 
+        ability = self.abilities.get(ability_name)
         if ability and ability.can_use(time.time()):
             self.casting_ability = ability
             self.casting_ability.cast_time_elapsed = 0
