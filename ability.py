@@ -1,4 +1,4 @@
-import time
+from typing import Optional
 
 
 class Ability:
@@ -12,6 +12,7 @@ class Ability:
         off_gcd: bool,
         color: tuple,
         range: float = 0,
+        cc_type: Optional[str] = None,
     ):
         self.name = name
         self.cast_time = cast_time  # Cast time in seconds
@@ -22,6 +23,7 @@ class Ability:
         self.color = color
         self.last_used = -cooldown  # Timestamp of last use
         self.range = range
+        self.cc_type = cc_type  # e.g., 'snare', 'root', 'stun'
 
     def can_use(self, current_time: float):
         return current_time - self.last_used >= self.cooldown

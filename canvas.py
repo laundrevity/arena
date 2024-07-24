@@ -1,3 +1,5 @@
+import time
+
 import pygame as pg
 
 from unit import Unit
@@ -51,6 +53,8 @@ class Canvas:
         if paused:
             self.draw_text("PAUSED", SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
 
+        self.draw_ability_cooldowns(units[0])  # Draw player ability cooldowns
+
         pg.display.flip()
 
     def draw_bar(self, unit: Unit, fill_ratio: float, color: tuple, offset_y: int):
@@ -74,3 +78,18 @@ class Canvas:
         text_surface = self.font.render(text, True, BLACK)
         text_rect = text_surface.get_rect(center=(x, y))
         self.screen.blit(text_surface, text_rect)
+
+    def draw_ability_cooldowns(self, unit: Unit):
+        current_time = time.time()
+        x, y = 50, SCREEN_HEIGHT - 100  # Starting position for cooldown icons
+
+        for ability_name, ability in unit.abilities.items():
+            cooldown_remaining = max(
+                0, ability.cooldown - (current_time - ability.last_used)
+            )
+            if cooldown_remaining > 0:
+                self.draw_text(f"{ability_name}: {cooldown_remaining:.1f}", x, y)
+            else:
+                self.draw_text(f"{ability_name}: Ready", x, y)
+
+            y += 50  # Move down for the next ability

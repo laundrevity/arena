@@ -10,7 +10,6 @@ class Battle:
     def __init__(self, render: bool = True):
         self.is_active = True
         self.render = render
-        self.temp_counter = 0
         self.paused = True
         self.fetch_input = True
 
@@ -20,6 +19,9 @@ class Battle:
         ]
 
     def tick(self, dt: float) -> None:
+        enemy = self.units[1]
+        player = self.units[0]
+
         if self.fetch_input:
             # process events
             for event in pg.event.get():
@@ -31,20 +33,21 @@ class Battle:
                     if event.key == pg.K_SPACE:
                         self.paused = not self.paused
                         print(f"{self.paused=}")
-                    elif event.key == pg.K_t:
-                        if self.units[0].casting_ability:
-                            self.units[0].cancel_cast()
-                        self.units[0].start_casting(
-                            "magic_missile"
-                        )  # start casting spell
+
+                    if not self.paused:
+                        if event.key == pg.K_t:
+                            if player.casting_ability:
+                                player.cancel_cast()
+                            player.start_casting("magic_missile")
+                        elif event.key == pg.K_1:
+                            player.use_ability("snare", enemy)
+                        elif event.key == pg.K_2:
+                            player.use_ability("root", enemy)
+                        elif event.key == pg.K_3:
+                            player.use_ability("stun", enemy)
 
         # get inputs, move entities, check collisions, update game data
         if not self.paused:
-            self.temp_counter += 1
-
-            enemy = self.units[1]
-            player = self.units[0]
-
             if self.fetch_input:
                 # get WASD input for moving player
                 keys = pg.key.get_pressed()
@@ -61,10 +64,11 @@ class Battle:
                 if abs(direction[0]) + abs(direction[1]) > 0:
                     player.move(direction, dt)
 
-            # Update casting
+            # Update casting and CC effects
             for unit in self.units:
                 if unit.update_cast(dt):
                     print("cast completed")
+                unit.update_cc(dt)
 
             # AI movement and melee attack
             dist_to_player = math.sqrt(
@@ -81,16 +85,18 @@ class Battle:
             for unit in self.units:
                 for projectile in unit.projectiles:
                     projectile.move(dt)
-                    if self.check_collision(projectile, self.units[1]):
+                    if self.check_collision(projectile, enemy):
                         if unit.completed_ability:
-                            self.units[1].current_hp -= unit.completed_ability.damage
+                            enemy.current_hp -= unit.completed_ability.damage
                         unit.projectiles.remove(projectile)
-                        if self.units[1].current_hp <= 0:
-                            print("Enemy died")
-                            self.is_active = False
 
-        if self.temp_counter > 100_000:
-            self.is_active = False
+            if enemy.current_hp <= 0:
+                print("Enemy died")
+                self.is_active = False
+
+            if player.current_hp <= 0:
+                print("Player died")
+                self.is_active = False
 
     def check_collision(self, projectile, target: Unit) -> bool:
         dist = math.sqrt(
