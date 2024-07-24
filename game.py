@@ -29,6 +29,6 @@ class Game:
             self.current_battle.tick(dt)
 
             if self.current_battle.render:
-                self.canvas.draw(self.current_battle.units)
+                self.canvas.draw(self.current_battle.units, self.current_battle.paused)
 
         print("battle done")
