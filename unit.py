@@ -6,12 +6,22 @@ class Unit:
     player: bool
     radius: int
     speed: int
+    max_hp: int
+    current_hp: int
+    casting: bool
+    cast_duration: float
+    cast_time: float
 
-    def __init__(self, player: bool, initial_pos: list[float]):
+    def __init__(self, player: bool, initial_pos: list[float], max_hp: int = 100):
         self.pos = initial_pos
         self.player = player
         self.radius = 20
         self.speed = 100  # Adjust for reasonable movement
+        self.max_hp = max_hp
+        self.current_hp = max_hp
+        self.casting = False
+        self.cast_duration = 1
+        self.cast_time = 0
 
     def move(self, direction: list[float], dt: float) -> None:
         norm = math.sqrt(direction[0] ** 2 + direction[1] ** 2)

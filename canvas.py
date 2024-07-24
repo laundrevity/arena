@@ -9,6 +9,7 @@ BLUE = (0, 0, 255)
 RED = (255, 0, 0)
 BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
+PURPLE = (128, 0, 128)
 
 
 class Canvas:
@@ -31,10 +32,34 @@ class Canvas:
             color = BLUE if unit.player else RED
             pg.draw.circle(self.screen, color, pos_int, unit.radius)
 
+            # Draw health bar
+            self.draw_bar(unit, unit.current_hp / unit.max_hp, GREEN, -25)
+
+            # Draw cast bar if casting
+            if unit.casting:
+                self.draw_bar(unit, unit.cast_time / unit.cast_duration, PURPLE, 25)
+
         if paused:
             self.draw_text("PAUSED", SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
 
         pg.display.flip()
+
+    def draw_bar(self, unit: Unit, fill_ratio: float, color: tuple, offset_y: int):
+        bar_width = unit.radius * 2
+        bar_height = 5
+        bar_bg_color = WHITE
+
+        # Position the bar
+        bar_x = int(unit.pos[0] - unit.radius)
+        bar_y = int(unit.pos[1] + offset_y)
+
+        # Draw the background of the bar
+        pg.draw.rect(self.screen, bar_bg_color, (bar_x, bar_y, bar_width, bar_height))
+
+        # Draw the foreground of the bar
+        pg.draw.rect(
+            self.screen, color, (bar_x, bar_y, int(bar_width * fill_ratio), bar_height)
+        )
 
     def draw_text(self, text: str, x: int, y: int):
         text_surface = self.font.render(text, True, BLACK)
