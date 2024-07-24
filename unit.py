@@ -139,6 +139,7 @@ class Unit:
         self.casting_ability = None
 
     def use_ability(self, ability_name: str, target: Optional["Unit"] = None):
+        print(f"use_ability({ability_name})")
         ability = self.abilities.get(ability_name)
         if ability and ability.is_instant and ability.can_use(time.time()):
             if ability.range > 0 and target:
@@ -147,6 +148,7 @@ class Unit:
                     + (self.pos[1] - target.pos[1]) ** 2
                 )
                 if distance > ability.range:
+                    print(f"target out of range: {distance=} > {ability.range=}")
                     return 0  # target out of range (WTF is return value)
 
             if ability.cc_type and target:
@@ -158,7 +160,10 @@ class Unit:
             ability.last_used = time.time()
 
             return ability.damage
-        return 0
+
+        else:
+            print(f"Could not use {ability_name}!")
+            return -1
 
     def apply_cc(self, cc_type: str, duration: float):
         self.cc_effects[cc_type] = duration
