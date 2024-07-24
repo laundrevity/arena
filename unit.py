@@ -5,6 +5,8 @@ from typing import Optional
 
 
 class Unit:
+    projectiles: list[Projectile]
+
     def __init__(self, player: bool, initial_pos: list[float], max_hp: int = 100):
         self.pos = initial_pos
         self.player = player
@@ -18,11 +20,21 @@ class Unit:
             "magic_missile": Ability(
                 "Magic Missile",
                 cast_time=1,
-                cooldown=3,
+                cooldown=0,
                 damage=20,
                 is_instant=False,
                 off_gcd=False,
                 color=(128, 0, 128),
+            ),
+            "melee_attack": Ability(
+                "Melee Attack",
+                cast_time=0,
+                cooldown=2,  # 2 second swing timer
+                damage=10,
+                is_instant=True,  # shouldnt this be mutex with cooldown>0?
+                off_gcd=True,
+                color=(255, 0, 0),
+                range=50,  # Melee range
             ),
             # Add more abilities as needed
         }
@@ -42,6 +54,10 @@ class Unit:
 
         if self.casting_ability:
             self.cancel_cast()
+
+    def move_towards(self, target_pos: list[float], dt: float):
+        direction = [target_pos[0] - self.pos[0], target_pos[1] - self.pos[1]]
+        self.move(direction, dt)
 
     def start_casting(self, ability_name: str):
         ability = self.abilities.get(ability_name)
@@ -65,12 +81,18 @@ class Unit:
     def cancel_cast(self):
         self.casting_ability = None
 
-    def use_ability(self, ability_name: str):
+    def use_ability(self, ability_name: str, target: Optional["Unit"] = None):
         ability = self.abilities.get(ability_name)
         if ability and ability.is_instant and ability.can_use(time.time()):
-            self.projectiles.append(
-                Projectile(self.pos, [400, 300], ability.color)
-            )  # Example target
+            if ability.range > 0 and target:
+                distance = math.sqrt(
+                    (self.pos[0] - target.pos[0]) ** 2
+                    + (self.pos[1] - target.pos[1]) ** 2
+                )
+                if distance > ability.range:
+                    return 0  # target out of range (WTF is return value)
+            if target:
+                target.current_hp -= ability.damage
             ability.last_used = time.time()
             return ability.damage
         return 0

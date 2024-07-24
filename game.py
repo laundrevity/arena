@@ -8,16 +8,19 @@ from canvas import Canvas
 class Game:
     current_battle: Optional[Battle]
     canvas: Canvas
+    debug: bool
 
-    def __init__(self):
+    def __init__(self, debug: bool = False):
         self.current_battle = None
         self.canvas = Canvas()
+        self.debug = debug
 
     def run(self):
         if self.current_battle is None:
             self.current_battle = Battle()
 
-        print("starting new battle")
+        if self.debug:
+            print("starting new battle")
 
         last_time = time.time()
 
@@ -30,5 +33,9 @@ class Game:
 
             if self.current_battle.render:
                 self.canvas.draw(self.current_battle.units, self.current_battle.paused)
+        if self.debug:
+            print("battle done")
 
-        print("battle done")
+    def draw_debug_info(self):
+        # Implement debug info display
+        pass

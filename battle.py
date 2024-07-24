@@ -42,6 +42,9 @@ class Battle:
         if not self.paused:
             self.temp_counter += 1
 
+            enemy = self.units[1]
+            player = self.units[0]
+
             if self.fetch_input:
                 # get WASD input for moving player
                 keys = pg.key.get_pressed()
@@ -56,12 +59,24 @@ class Battle:
                     direction[0] += 1
 
                 if abs(direction[0]) + abs(direction[1]) > 0:
-                    self.units[0].move(direction, dt)
+                    player.move(direction, dt)
 
             # Update casting
             for unit in self.units:
                 if unit.update_cast(dt):
                     print("cast completed")
+
+            # AI movement and melee attack
+            enemy.move_towards(player.pos, dt)
+            dist_to_player = math.sqrt(
+                (enemy.pos[0] - player.pos[0]) ** 2
+                + (enemy.pos[1] - player.pos[1]) ** 2
+            )
+
+            if dist_to_player > enemy.abilities["melee_attack"].range:
+                enemy.move_towards(player.pos, dt)
+            else:
+                enemy.use_ability("melee_attack", player)
 
             # Move and draw projectiles
             for unit in self.units:

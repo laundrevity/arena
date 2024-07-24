@@ -11,6 +11,7 @@ class Ability:
         is_instant: bool,
         off_gcd: bool,
         color: tuple,
+        range: float = 0,
     ):
         self.name = name
         self.cast_time = cast_time  # Cast time in seconds
@@ -20,6 +21,7 @@ class Ability:
         self.off_gcd = off_gcd
         self.color = color
         self.last_used = -cooldown  # Timestamp of last use
+        self.range = range
 
     def can_use(self, current_time: float):
         return current_time - self.last_used >= self.cooldown
