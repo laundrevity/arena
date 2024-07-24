@@ -1,15 +1,23 @@
+from typing import Optional
+from logging import Logger
 import math
 import time
+
 from ability import Ability, Projectile
-from typing import Optional
 
 
 class Unit:
     projectiles: list[Projectile]
     target: Optional["Unit"]  # Use a forward reference as a string
+    logger: Logger
 
     def __init__(
-        self, player: bool, initial_pos: list[float], role: str, max_hp: int = 100
+        self,
+        logger: Logger,
+        player: bool,
+        initial_pos: list[float],
+        role: str,
+        max_hp: int = 100,
     ):
         self.pos = initial_pos
         self.player = player
@@ -25,6 +33,7 @@ class Unit:
         self.projectiles = []
         self.cc_effects = {"snare": 0, "root": 0, "stun": 0}
         self.abilities = self.get_abilities_for_role(role)
+        self.logger = logger
 
     def get_abilities_for_role(self, role: str):
         abilities = {
@@ -125,7 +134,7 @@ class Unit:
             self.casting_ability.cast_time_elapsed += dt
             if self.casting_ability.cast_time_elapsed >= self.casting_ability.cast_time:
                 if self.target is None:
-                    print("Cannot complete cast - no valid target!")
+                    self.logger.info("Cannot complete cast - no valid target!")
                     return False
 
                 self.casting_ability.last_used = time.time()
@@ -141,7 +150,6 @@ class Unit:
         self.casting_ability = None
 
     def use_ability(self, ability_name: str, target: Optional["Unit"] = None):
-        print(f"use_ability({ability_name})")
         ability = self.abilities.get(ability_name)
         if ability and ability.is_instant and ability.can_use(time.time()):
             if ability.range > 0 and target:
@@ -150,7 +158,9 @@ class Unit:
                     + (self.pos[1] - target.pos[1]) ** 2
                 )
                 if distance > ability.range:
-                    print(f"target out of range: {distance=} > {ability.range=}")
+                    self.logger.info(
+                        f"target out of range: {distance=} > {ability.range=}"
+                    )
                     return 0  # target out of range (WTF is return value)
 
             if ability.cc_type and target:
@@ -164,7 +174,6 @@ class Unit:
             return ability.damage
 
         else:
-            print(f"Could not use {ability_name}!")
             return -1
 
     def apply_cc(self, cc_type: str, duration: float):

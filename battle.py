@@ -1,6 +1,7 @@
 import sys
 import pygame as pg
 import math
+from logging import Logger
 
 from unit import Unit
 from ability import Projectile
@@ -9,6 +10,7 @@ from ability import Projectile
 class Battle:
     def __init__(
         self,
+        logger: Logger,
         player_role=None,
         ai_role=None,
         ai2_role=None,
@@ -19,17 +21,20 @@ class Battle:
         self.render = render
         self.paused = True
         self.fetch_input = not ai_vs_ai
+        self.logger = logger
 
         if ai_vs_ai:
             self.units = [
-                Unit(player=False, initial_pos=[100, 100], role=ai_role),
-                Unit(player=False, initial_pos=[400, 300], role=ai2_role),
+                Unit(logger, player=False, initial_pos=[100, 100], role=ai_role),
+                Unit(logger, player=False, initial_pos=[400, 300], role=ai2_role),
             ]
         else:
             self.units = [
-                Unit(player=True, initial_pos=[100, 100], role=player_role),
-                Unit(player=False, initial_pos=[400, 300], role=ai_role),
+                Unit(logger, player=True, initial_pos=[100, 100], role=player_role),
+                Unit(logger, player=False, initial_pos=[400, 300], role=ai_role),
             ]
+
+        self.logger.info(f"Battle setup: {self.units}")
 
     def tick(self, dt: float) -> None:
         for event in pg.event.get():
@@ -40,17 +45,22 @@ class Battle:
             elif event.type == pg.KEYDOWN:
                 if event.key == pg.K_SPACE:
                     self.paused = not self.paused
+                    self.logger.debug(f"Game {'paused' if self.paused else 'resumed'}")
 
                 if not self.paused and self.fetch_input:
                     player = self.units[0]
                     if event.key == pg.K_t:
                         if not player.casting_ability:
+                            self.logger.info("Player starts casting Magic Missle")
                             player.start_casting("magic_missile", self.units[1])
                     elif event.key == pg.K_1:
+                        self.logger.info("Player uses Snare")
                         player.use_ability("snare", self.units[1])
                     elif event.key == pg.K_2:
+                        self.logger.info("Player uses Root")
                         player.use_ability("root", self.units[1])
                     elif event.key == pg.K_3:
+                        self.logger.info("Player uses Stun")
                         player.use_ability("stun", self.units[1])
 
         if not self.paused:
@@ -74,7 +84,9 @@ class Battle:
             # Update casting and CC effects
             for unit in self.units:
                 if unit.update_cast(dt):
-                    print("cast completed")
+                    self.logger.info(
+                        f"{unit} completed casting {unit.completed_ability.name}"
+                    )
                 unit.update_cc(dt)
 
                 for unit in self.units:
@@ -86,13 +98,16 @@ class Battle:
                             ):
                                 target.current_hp -= unit.completed_ability.damage
                                 unit.projectiles.remove(projectile)
+                                self.logger.info(
+                                    f"{unit} hits {target} with {unit.completed_ability.name}"
+                                )
 
             if self.units[1].current_hp <= 0:
-                print("Enemy died")
+                self.logger.info("Enemy died")
                 self.is_active = False
 
             if self.units[0].current_hp <= 0:
-                print("Player died")
+                self.logger.info("Player died")
                 self.is_active = False
 
             if len(self.units) == 2:
