@@ -34,3 +34,24 @@ class Unit:
 
         self.pos[0] += dx
         self.pos[1] += dy
+
+        if self.casting:
+            self.cancel_cast()
+
+    def start_casting(self, duration: float):
+        self.casting = True
+        self.cast_duration = duration
+        self.cast_time = 0
+
+    def update_cast(self, dt: float):
+        if self.casting:
+            self.cast_time += dt
+            if self.cast_time >= self.cast_duration:
+                self.casting = False
+                self.cast_time = 0
+                return True  # indicate cast completion
+        return False  # cast not completed
+
+    def cancel_cast(self):
+        self.casting = False
+        self.cast_time = 0

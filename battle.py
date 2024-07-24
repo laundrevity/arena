@@ -35,6 +35,11 @@ class Battle:
                     if event.key == pg.K_SPACE:
                         self.paused = not self.paused
                         print(f"{self.paused=}")
+                    elif event.key == pg.K_t:
+                        if self.units[0].casting:
+                            self.units[0].cancel_cast()
+
+                        self.units[0].start_casting(1)  # start casting a 1s spell
 
         # get inputs, move entities, check collisions, update game data
         if not self.paused:
@@ -53,7 +58,14 @@ class Battle:
                 if keys[pg.K_d]:
                     direction[0] += 1
 
-                self.units[0].move(direction, dt)
+                if abs(direction[0]) + abs(direction[1]) > 0:
+                    self.units[0].move(direction, dt)
+
+            # Update casting
+            for unit in self.units:
+                if unit.casting:
+                    if unit.update_cast(dt):
+                        print("cast completed")
 
         if self.temp_counter > 100_000:
             self.is_active = False
