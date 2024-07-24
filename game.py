@@ -1,5 +1,6 @@
 from typing import Optional
 import time
+from logging import Logger
 
 from battle import Battle
 from canvas import Canvas
@@ -9,18 +10,20 @@ class Game:
     current_battle: Optional[Battle]
     canvas: Canvas
     debug: bool
+    logger: Logger
 
-    def __init__(self, debug: bool = False):
+    def __init__(self, logger: Logger, debug: bool = False):
         self.current_battle = None
         self.canvas = Canvas()
         self.debug = debug
+        self.logger = logger
 
     def run(self):
         if self.current_battle is None:
             self.current_battle = self.setup_battle()
 
         if self.debug:
-            print("starting new battle")
+            self.logger.debug("starting new battle")
 
         last_time = time.time()
 
@@ -34,16 +37,19 @@ class Game:
             if self.current_battle.render:
                 self.canvas.draw(self.current_battle.units, self.current_battle.paused)
         if self.debug:
-            print("battle done")
+            self.logger.debug("battle done")
 
     def setup_battle(self) -> Battle:
+        self.logger.info("Setting up the battle in console...")
         print("Choose battle type:")
         print("1. Human vs AI")
         print("2. AI vs AI")
         battle_type = input("Enter 1 or 2: ")
 
         if battle_type not in ["1", "2"]:
-            print("Invalid input. Defaulting to Human vs AI.")
+            self.logger.warning(
+                f"Invalid input {battle_type} for battle type. Defaulting to Human vs AI."
+            )
             battle_type = "1"
 
         roles = ["caster", "melee"]
@@ -53,7 +59,10 @@ class Game:
             print("2. Melee")
             player_role = input("Enter 1 or 2:")
             if player_role not in ["1", "2"]:
-                print("Invalid input. Defaulting to Caster.")
+                self.logger.warning(
+                    f"Invalid input {player_role} for player role. Defaulting to caster."
+                )
+                player_role = "1"
             player_role = roles[int(player_role) - 1]
 
             print("Chooise AI role:")
@@ -61,10 +70,15 @@ class Game:
             print("2. Melee")
             ai_role = input("Enter 1 or 2:")
             if ai_role not in ["1", "2"]:
-                print("Invalid input. Defaulting to Melee.")
+                self.logger.warning(
+                    f"Invalid input {ai_role} for AI role. Defaulting to melee."
+                )
+                ai_role = "2"
             ai_role = roles[int(ai_role) - 1]
 
-            return Battle(player_role=player_role, ai_role=ai_role, ai_vs_ai=False)
+            return Battle(
+                self.logger, player_role=player_role, ai_role=ai_role, ai_vs_ai=False
+            )
 
         elif battle_type == "2":
             print("Choose role for 1st AI: ")
@@ -84,7 +98,11 @@ class Game:
             ai_role_2 = roles[int(ai_role_2) - 1]
 
             return Battle(
-                player_role=None, ai_role=ai_role_1, ai2_role=ai_role_2, ai_vs_ai=True
+                self.logger,
+                player_role=None,
+                ai_role=ai_role_1,
+                ai2_role=ai_role_2,
+                ai_vs_ai=True,
             )
 
     def draw_debug_info(self):
