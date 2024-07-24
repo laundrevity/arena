@@ -102,10 +102,14 @@ class Canvas:
                         unit.casting_ability.cast_time
                         - unit.casting_ability.cast_time_elapsed,
                     )
-                    self.draw_text(f"{cast_time_left:.1f}", x + 20, y + 20)
+                    text_surface = self.icon_font.render(cast_time_left, True, BLACK)
+                    text_rect = text_surface.get_rect(center=(x + 20, y + 20))
+                    self.screen.blit(text_surface, text_rect)
                 elif cd_left > 0:
                     # Draw cooldown time
-                    self.draw_text(f"{cd_left:.1f}", x + 20, y + 20)
+                    text_surface = self.icon_font.render(f"{cd_left:.1f}", True, BLACK)
+                    text_rect = text_surface.get_rect(center=(x + 20, y + 20))
+                    self.screen.blit(text_surface, text_rect)
                 else:
                     # Draw hotkey (assuming they like 1, 2, 3 etc)
                     hotkey = str(idx + 1)
@@ -115,25 +119,3 @@ class Canvas:
 
                 x += 50  # Move to next position
                 idx += 1
-
-        # Draw non-CD abilities (e.g. magic missile)
-        if "magic_missile" in unit.abilities:
-            ability = unit.abilities["magic_missile"]
-            icon_color = ability.color
-
-            pg.draw.rect(self.screen, icon_color, (x, y, 40, 40))
-            pg.draw.rect(self.screen, BLACK, (x, y, 40, 40), 2)
-
-            if unit.casting_ability and unit.casting_ability.name == "magic_missile":
-                # Show remaining cast time
-                cast_time_left = max(
-                    0,
-                    unit.casting_ability.cast_time
-                    - unit.casting_ability.cast_time_elapsed,
-                )
-                self.draw_text(f"{cast_time_left:.1f}", x + 20, y + 20)
-            else:
-                hotkey = "T"
-                text_surface = self.icon_font.render(hotkey, True, BLACK)
-                text_rect = text_surface.get_rect(center=(x + 20, y + 20))
-                self.screen.blit(text_surface, text_rect)
