@@ -41,45 +41,14 @@ class Battle:
             if event.type == pg.QUIT:
                 pg.quit()
                 sys.exit()
-
-            elif event.type == pg.KEYDOWN:
-                if event.key == pg.K_SPACE:
-                    self.paused = not self.paused
-                    self.logger.debug(f"Game {'paused' if self.paused else 'resumed'}")
-
-                if not self.paused and self.fetch_input:
-                    player = self.units[0]
-                    if event.key == pg.K_t:
-                        if not player.casting_ability:
-                            self.logger.info("Player starts casting Magic Missle")
-                            player.start_casting("magic_missile", self.units[1])
-                    elif event.key == pg.K_1:
-                        self.logger.info("Player uses Snare")
-                        player.use_ability("snare", self.units[1])
-                    elif event.key == pg.K_2:
-                        self.logger.info("Player uses Root")
-                        player.use_ability("root", self.units[1])
-                    elif event.key == pg.K_3:
-                        self.logger.info("Player uses Stun")
-                        player.use_ability("stun", self.units[1])
+            elif event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+                self.paused = not self.paused
+                self.logger.debug(f"Game {'paused' if self.paused else 'resumed'}")
 
         if not self.paused:
-            if self.fetch_input:
-                player = self.units[0]
-                # get WASD input for moving player
-                keys = pg.key.get_pressed()
-                direction = [0, 0]
-                if keys[pg.K_w]:
-                    direction[1] -= 1
-                if keys[pg.K_s]:
-                    direction[1] += 1
-                if keys[pg.K_a]:
-                    direction[0] -= 1
-                if keys[pg.K_d]:
-                    direction[0] += 1
-
-                if abs(direction[0]) + abs(direction[1]) > 0:
-                    player.move(direction, dt)
+            for unit in self.units:
+                actions = unit.agent.choose_action(self.get_game_state())
+                unit.perform_actions(actions)
 
             # Update casting and CC effects
             for unit in self.units:
@@ -89,18 +58,15 @@ class Battle:
                     )
                 unit.update_cc(dt)
 
-                for unit in self.units:
-                    for projectile in unit.projectiles:
-                        projectile.move(dt)
-                        for target in self.units:
-                            if target != unit and self.check_collision(
-                                projectile, target
-                            ):
-                                target.current_hp -= unit.completed_ability.damage
-                                unit.projectiles.remove(projectile)
-                                self.logger.info(
-                                    f"{unit} hits {target} with {unit.completed_ability.name}"
-                                )
+                for projectile in unit.projectiles:
+                    projectile.move(dt)
+                    for target in self.units:
+                        if target != unit and self.check_collision(projectile, target):
+                            target.current_hp -= unit.completed_ability.damage
+                            unit.projectiles.remove(projectile)
+                            self.logger.info(
+                                f"{unit} hits {target} with {unit.completed_ability.name}"
+                            )
 
             if self.units[1].current_hp <= 0:
                 self.logger.info("Enemy died")
@@ -109,13 +75,6 @@ class Battle:
             if self.units[0].current_hp <= 0:
                 self.logger.info("Player died")
                 self.is_active = False
-
-            if len(self.units) == 2:
-                if not self.fetch_input:
-                    self.update_ai(self.units[0], self.units[1], dt)
-                    self.update_ai(self.units[1], self.units[0], dt)
-                else:
-                    self.update_ai(self.units[1], self.units[0], dt)
 
     def update_ai(self, ai_unit: Unit, target: Unit, dt: float):
         if ai_unit.role == "melee":
@@ -141,3 +100,6 @@ class Battle:
             + (projectile.pos[1] - target.pos[1]) ** 2
         )
         return dist < target.radius
+
+    def get_game_state(self):
+        return {}

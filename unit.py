@@ -4,12 +4,16 @@ import math
 import time
 
 from ability import Ability, Projectile
+from agent import Agent
+from human_agent import HumanAgent
+from ai_agent import AIAgent
 
 
 class Unit:
     projectiles: list[Projectile]
     target: Optional["Unit"]  # Use a forward reference as a string
     logger: Logger
+    agent: Agent
 
     def __init__(
         self,
@@ -34,6 +38,28 @@ class Unit:
         self.cc_effects = {"snare": 0, "root": 0, "stun": 0}
         self.abilities = self.get_abilities_for_role(role)
         self.logger = logger
+        self.agent = HumanAgent(self) if player else AIAgent(self)
+
+    def perform_actions(self, actions, dt: float = 0):
+        for action in actions:
+            if action == "move_up":
+                self.move([0, -1], dt)
+            elif action == "move_down":
+                self.move([0, 1], dt)
+            elif action == "move_left":
+                self.move([-1, 0], dt)
+            elif action == "move_right":
+                self.move([1, 0], dt)
+            elif action.startswith("cast_"):
+                ability_name = action.split("_")[1]
+                self.start_casting(ability_name, self.target)
+            elif action.startswith("use_"):
+                ability_name = action.split("_")[1]
+                self.use_ability(ability_name, self.target)
+            elif action == "move_towards_target":
+                self.move_towards(self.target.pos, dt)
+            elif action == "melee_attack":
+                self.use_ability("melee_attack", self.target)
 
     def get_abilities_for_role(self, role: str):
         abilities = {
@@ -77,7 +103,7 @@ class Unit:
                     is_instant=True,
                     off_gcd=True,
                     color=(255, 0, 0),
-                    range=150,
+                    range=750,
                     cc_type="stun",
                 ),
             },
