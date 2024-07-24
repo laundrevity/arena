@@ -67,7 +67,6 @@ class Battle:
                     print("cast completed")
 
             # AI movement and melee attack
-            enemy.move_towards(player.pos, dt)
             dist_to_player = math.sqrt(
                 (enemy.pos[0] - player.pos[0]) ** 2
                 + (enemy.pos[1] - player.pos[1]) ** 2
