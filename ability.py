@@ -24,6 +24,7 @@ class Ability:
         self.last_used = -cooldown  # Timestamp of last use
         self.range = range
         self.cc_type = cc_type  # e.g., 'snare', 'root', 'stun'
+        self.cast_time_elapsed = 0
 
     def can_use(self, current_time: float):
         return current_time - self.last_used >= self.cooldown

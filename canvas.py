@@ -12,6 +12,7 @@ RED = (255, 0, 0)
 BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
 PURPLE = (128, 0, 128)
+DULL_GRAY = (169, 169, 169)
 
 
 class Canvas:
@@ -23,6 +24,7 @@ class Canvas:
         self.screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pg.display.set_caption(caption)
         self.font = pg.font.SysFont(None, 48)  # Initialize font
+        self.icon_font = pg.font.SysFont(None, 24)  # Font for hotkeys
 
     def draw(self, units: list[Unit] = [], paused: bool = False):
         self.screen.fill(WHITE)
@@ -81,15 +83,57 @@ class Canvas:
 
     def draw_ability_cooldowns(self, unit: Unit):
         current_time = time.time()
-        x, y = 50, SCREEN_HEIGHT - 100  # Starting position for cooldown icons
+        x, y = 50, SCREEN_HEIGHT - 150  # Starting position for cooldown icons
 
+        idx = 0
         for ability_name, ability in unit.abilities.items():
-            cooldown_remaining = max(
-                0, ability.cooldown - (current_time - ability.last_used)
-            )
-            if cooldown_remaining > 0:
-                self.draw_text(f"{ability_name}: {cooldown_remaining:.1f}", x, y)
-            else:
-                self.draw_text(f"{ability_name}: Ready", x, y)
+            if ability.cooldown > 0 and "melee" not in ability_name:
+                cd_left = max(0, ability.cooldown - (current_time - ability.last_used))
+                icon_color = ability.color if cd_left == 0 else DULL_GRAY
 
-            y += 50  # Move down for the next ability
+                # Draw ability icon (square for simplicity)
+                pg.draw.rect(self.screen, icon_color, (x, y, 40, 40))
+                pg.draw.rect(self.screen, BLACK, (x, y, 40, 40), 2)  # Border
+
+                if unit.casting_ability and unit.casting_ability.name == ability_name:
+                    # Show remaining cast time
+                    cast_time_left = max(
+                        0,
+                        unit.casting_ability.cast_time
+                        - unit.casting_ability.cast_time_elapsed,
+                    )
+                    self.draw_text(f"{cast_time_left:.1f}", x + 20, y + 20)
+                elif cd_left > 0:
+                    # Draw cooldown time
+                    self.draw_text(f"{cd_left:.1f}", x + 20, y + 20)
+                else:
+                    # Draw hotkey (assuming they like 1, 2, 3 etc)
+                    hotkey = str(idx + 1)
+                    text_surface = self.icon_font.render(hotkey, True, BLACK)
+                    text_rect = text_surface.get_rect(center=(x + 20, y + 20))
+                    self.screen.blit(text_surface, text_rect)
+
+                x += 50  # Move to next position
+                idx += 1
+
+        # Draw non-CD abilities (e.g. magic missile)
+        if "magic_missile" in unit.abilities:
+            ability = unit.abilities["magic_missile"]
+            icon_color = ability.color
+
+            pg.draw.rect(self.screen, icon_color, (x, y, 40, 40))
+            pg.draw.rect(self.screen, BLACK, (x, y, 40, 40), 2)
+
+            if unit.casting_ability and unit.casting_ability.name == "magic_missile":
+                # Show remaining cast time
+                cast_time_left = max(
+                    0,
+                    unit.casting_ability.cast_time
+                    - unit.casting_ability.cast_time_elapsed,
+                )
+                self.draw_text(f"{cast_time_left:.1f}", x + 20, y + 20)
+            else:
+                hotkey = "T"
+                text_surface = self.icon_font.render(hotkey, True, BLACK)
+                text_rect = text_surface.get_rect(center=(x + 20, y + 20))
+                self.screen.blit(text_surface, text_rect)
