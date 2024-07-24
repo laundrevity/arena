@@ -26,7 +26,6 @@ class Canvas:
         self.screen.fill(WHITE)
 
         for unit in units:
-            # NOTE: assuming here that Unit has these methods! maybe make them abstract?
             # Convert float positions to integers for drawing
             pos_int = [int(coord) for coord in unit.pos]
             color = BLUE if unit.player else RED
@@ -36,8 +35,18 @@ class Canvas:
             self.draw_bar(unit, unit.current_hp / unit.max_hp, GREEN, -25)
 
             # Draw cast bar if casting
-            if unit.casting:
-                self.draw_bar(unit, unit.cast_time / unit.cast_duration, PURPLE, 25)
+            if unit.casting_ability and not unit.casting_ability.is_instant:
+                self.draw_bar(
+                    unit,
+                    unit.casting_ability.cast_time_elapsed
+                    / unit.casting_ability.cast_time,
+                    PURPLE,
+                    25,
+                )
+
+            # Draw projectiles if exist
+            for projectile in unit.projectiles:
+                projectile.draw(self.screen)
 
         if paused:
             self.draw_text("PAUSED", SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
