@@ -23,7 +23,9 @@ class Canvas:
 
         for unit in units:
             # NOTE: assuming here that Unit has these methods! maybe make them abstract?
+            # Convert float positions to integers for drawing
+            pos_int = [int(coord) for coord in unit.pos]
             color = BLUE if unit.player else RED
-            pg.draw.circle(self.screen, color, unit.pos, unit.radius)
+            pg.draw.circle(self.screen, color, pos_int, unit.radius)
 
         pg.display.flip()

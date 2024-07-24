@@ -23,7 +23,7 @@ class Battle:
         self.units.append(Unit(player=True, initial_pos=[100, 100]))
         self.units.append(Unit(player=False, initial_pos=[400, 300]))
 
-    def tick(self) -> None:
+    def tick(self, dt: float) -> None:
         if self.fetch_input:
             # process events
             for event in pg.event.get():
@@ -40,5 +40,20 @@ class Battle:
         if not self.paused:
             self.temp_counter += 1
 
-        if self.temp_counter > 1_000:
+            if self.fetch_input:
+                # get WASD input for moving player
+                keys = pg.key.get_pressed()
+                direction = [0, 0]
+                if keys[pg.K_w]:
+                    direction[1] -= 1
+                if keys[pg.K_s]:
+                    direction[1] += 1
+                if keys[pg.K_a]:
+                    direction[0] -= 1
+                if keys[pg.K_d]:
+                    direction[0] += 1
+
+                self.units[0].move(direction, dt)
+
+        if self.temp_counter > 100_000:
             self.is_active = False
