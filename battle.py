@@ -95,9 +95,12 @@ class Battle:
                 print("Player died")
                 self.is_active = False
 
-            if len(self.units) == 2 and not self.fetch_input:
-                self.update_ai(self.units[0], self.units[1], dt)
-                self.update_ai(self.units[1], self.units[0], dt)
+            if len(self.units) == 2:
+                if not self.fetch_input:
+                    self.update_ai(self.units[0], self.units[1], dt)
+                    self.update_ai(self.units[1], self.units[0], dt)
+                else:
+                    self.update_ai(self.units[1], self.units[0], dt)
 
     def update_ai(self, ai_unit: Unit, target: Unit, dt: float):
         if ai_unit.role == "melee":
