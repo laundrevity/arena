@@ -3,10 +3,10 @@ import os
 from datetime import datetime
 
 
-def setup_logger(name):
+def setup_logger(name, level=logging.INFO):
     # Create a custom logger
     logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(level)
 
     # Create handlers
     log_dir = "logs"
@@ -15,7 +15,9 @@ def setup_logger(name):
     log_file = os.path.join(log_dir, f"log_{timestamp}.log")
 
     file_handler = logging.FileHandler(log_file)
+    file_handler.setLevel(level)
     console_handler = logging.StreamHandler()
+    console_handler.setLevel(level)
 
     # Set level for handlers
     file_handler.setLevel(logging.DEBUG)
@@ -23,7 +25,7 @@ def setup_logger(name):
 
     # Create formatters and add them to handlers
     formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        "%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s"
     )
     file_handler.setFormatter(formatter)
     console_handler.setFormatter(formatter)

@@ -1,15 +1,18 @@
 from typing import Optional
 from logging import Logger
-import math
 import time
 
 from ability import Ability, Projectile
+from agent import Agent, Action
+from human_agent import HumanAgent
+from ai_agent import AIAgent
 
 
 class Unit:
     projectiles: list[Projectile]
     target: Optional["Unit"]  # Use a forward reference as a string
     logger: Logger
+    agent: Agent
 
     def __init__(
         self,
@@ -34,6 +37,27 @@ class Unit:
         self.cc_effects = {"snare": 0, "root": 0, "stun": 0}
         self.abilities = self.get_abilities_for_role(role)
         self.logger = logger
+        self.agent = HumanAgent(self) if player else AIAgent(self)
+
+    def perform_actions(self, action: Action, dt: float):
+        self.logger.debug(
+            f"Performing actions: move: {action.move_direction}, ability: {action.ability_name} for {self.player=}"
+        )
+
+        if action.move_direction != [0, 0]:
+            self.move(action.move_direction, dt)
+
+        if action.ability_name:
+            if action.ability_name.startswith("cast_"):
+                ability_name = action.ability_name[5:]
+                self.start_casting(ability_name, self.target)
+            elif action.ability_name.startswith("use_"):
+                ability_name = action.ability_name.split("_")[1]
+                self.use_ability(ability_name, self.target)
+            elif action.ability_name == "move_towards_target":
+                self.move_towards(self.target.pos, dt)
+            elif action.ability_name == "melee_attack":
+                self.use_ability("melee_attack", self.target)
 
     def get_abilities_for_role(self, role: str):
         abilities = {
@@ -77,7 +101,7 @@ class Unit:
                     is_instant=True,
                     off_gcd=True,
                     color=(255, 0, 0),
-                    range=150,
+                    range=750,
                     cc_type="stun",
                 ),
             },
@@ -100,7 +124,7 @@ class Unit:
         if self.cc_effects["root"] > 0 or self.cc_effects["stun"] > 0:
             return  # Cannot move if rooted or stunned
 
-        norm = math.sqrt(direction[0] ** 2 + direction[1] ** 2)
+        norm = (direction[0] ** 2 + direction[1] ** 2) ** 0.5
         if norm != 0:
             direction[0] /= norm
             direction[1] /= norm
@@ -111,6 +135,8 @@ class Unit:
         self.pos[0] += dx
         self.pos[1] += dy
 
+        self.logger.debug(f"move: {direction=}, {self.speed=}, {dt=}, {dx=}, {dy=}")
+
         if self.casting_ability:
             self.cancel_cast()
 
@@ -120,6 +146,7 @@ class Unit:
 
     def start_casting(self, ability_name: str, target: Optional["Unit"] = None):
         if self.cc_effects["stun"] > 0:
+            self.logger.debug(f"Cannot cast {ability_name}, unit is stunned.")
             return  # Cannot cast if stunned
 
         ability = self.abilities.get(ability_name)
@@ -128,10 +155,18 @@ class Unit:
             self.casting_ability.cast_time_elapsed = 0
             # set target to remember for when cast completes
             self.target = target
+            self.logger.debug(f"Started casting {ability_name} on target {target}")
+        else:
+            self.logger.debug(
+                f"Cannot cast {ability_name}, ability not found or on cooldown."
+            )
 
     def update_cast(self, dt: float):
         if self.casting_ability:
             self.casting_ability.cast_time_elapsed += dt
+            self.logger.debug(
+                f"Updating cast for {self.casting_ability.name}, elapsed: {self.casting_ability.cast_time_elapsed}"
+            )
             if self.casting_ability.cast_time_elapsed >= self.casting_ability.cast_time:
                 if self.target is None:
                     self.logger.info("Cannot complete cast - no valid target!")
@@ -143,6 +178,7 @@ class Unit:
                 )
                 self.completed_ability = self.casting_ability
                 self.casting_ability = None
+                self.logger.debug(f"Completed casting {self.completed_ability.name}")
                 return True  # indicate cast completion
         return False  # cast not completed
 
@@ -153,10 +189,7 @@ class Unit:
         ability = self.abilities.get(ability_name)
         if ability and ability.is_instant and ability.can_use(time.time()):
             if ability.range > 0 and target:
-                distance = math.sqrt(
-                    (self.pos[0] - target.pos[0]) ** 2
-                    + (self.pos[1] - target.pos[1]) ** 2
-                )
+                distance = self.distance_to_target(target)
                 if distance > ability.range:
                     self.logger.info(
                         f"target out of range: {distance=} > {ability.range=}"
@@ -170,10 +203,13 @@ class Unit:
                 target.current_hp -= ability.damage
 
             ability.last_used = time.time()
-
+            self.logger.debug(f"Used ability {ability_name} on target {target}")
             return ability.damage
 
         else:
+            self.logger.debug(
+                f"Cannot use {ability_name}, ability not found or on cooldown."
+            )
             return -1
 
     def apply_cc(self, cc_type: str, duration: float):
@@ -196,3 +232,13 @@ class Unit:
             return False
 
         return self.abilities.get(ability_name).can_use(time.time())
+
+    def distance_to_target(self, target: Optional["Unit"]) -> float:
+        if target is None:
+            self.logger.warning(f"Tried to calculate distance without target...")
+            return 0
+
+        # use l2 norm
+        dx = (self.pos[0] - target.pos[0]) ** 2
+        dy = (self.pos[1] - target.pos[1]) ** 2
+        return (dx + dy) ** 0.5
