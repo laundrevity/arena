@@ -22,13 +22,13 @@ class HumanAgent(Agent):
 
         ability_name = None
         if keys[pg.K_t] and not self.unit.casting_ability:
-            ability_name = "magic_missile"
+            ability_name = "cast_magic_missile"
         elif keys[pg.K_1]:
-            ability_name = "snare"
+            ability_name = "use_snare"
         elif keys[pg.K_2]:
-            ability_name = "root"
+            ability_name = "use_root"
         elif keys[pg.K_3]:
-            ability_name = "stun"
+            ability_name = "use_stun"
 
         self.unit.logger.debug(
             f"HUMAN choose_actions({game_state}) -> move: {move_direction}, ability: {ability_name}"

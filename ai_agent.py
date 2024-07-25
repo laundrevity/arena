@@ -11,6 +11,9 @@ class AIAgent(Agent):
         ability_name = None
 
         if self.unit.role == "melee":
+            dist = self.unit.distance_to_target(self.unit.target)
+            self.unit.logger.debug(f"{dist=}")
+
             if (
                 self.unit.target
                 and self.unit.distance_to_target(self.unit.target)

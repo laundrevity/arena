@@ -34,6 +34,10 @@ class Battle:
                 Unit(logger, player=False, initial_pos=[400, 300], role=ai_role),
             ]
 
+        # set targets
+        self.units[0].target = self.units[1]
+        self.units[1].target = self.units[0]
+
         self.logger.info(f"Battle setup: {self.units}")
 
     def tick(self, dt: float) -> None:

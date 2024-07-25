@@ -1,6 +1,5 @@
 from typing import Optional
 from logging import Logger
-import math
 import time
 
 from ability import Ability, Projectile
@@ -50,7 +49,7 @@ class Unit:
 
         if action.ability_name:
             if action.ability_name.startswith("cast_"):
-                ability_name = action.ability_name.split("_")[1]
+                ability_name = action.ability_name[5:]
                 self.start_casting(ability_name, self.target)
             elif action.ability_name.startswith("use_"):
                 ability_name = action.ability_name.split("_")[1]
@@ -125,7 +124,7 @@ class Unit:
         if self.cc_effects["root"] > 0 or self.cc_effects["stun"] > 0:
             return  # Cannot move if rooted or stunned
 
-        norm = math.sqrt(direction[0] ** 2 + direction[1] ** 2)
+        norm = (direction[0] ** 2 + direction[1] ** 2) ** 0.5
         if norm != 0:
             direction[0] /= norm
             direction[1] /= norm
@@ -147,6 +146,7 @@ class Unit:
 
     def start_casting(self, ability_name: str, target: Optional["Unit"] = None):
         if self.cc_effects["stun"] > 0:
+            self.logger.debug(f"Cannot cast {ability_name}, unit is stunned.")
             return  # Cannot cast if stunned
 
         ability = self.abilities.get(ability_name)
@@ -156,6 +156,10 @@ class Unit:
             # set target to remember for when cast completes
             self.target = target
             self.logger.debug(f"Started casting {ability_name} on target {target}")
+        else:
+            self.logger.debug(
+                f"Cannot cast {ability_name}, ability not found or on cooldown."
+            )
 
     def update_cast(self, dt: float):
         if self.casting_ability:
@@ -185,10 +189,7 @@ class Unit:
         ability = self.abilities.get(ability_name)
         if ability and ability.is_instant and ability.can_use(time.time()):
             if ability.range > 0 and target:
-                distance = math.sqrt(
-                    (self.pos[0] - target.pos[0]) ** 2
-                    + (self.pos[1] - target.pos[1]) ** 2
-                )
+                distance = self.distance_to_target(target)
                 if distance > ability.range:
                     self.logger.info(
                         f"target out of range: {distance=} > {ability.range=}"
@@ -202,10 +203,13 @@ class Unit:
                 target.current_hp -= ability.damage
 
             ability.last_used = time.time()
-
+            self.logger.debug(f"Used ability {ability_name} on target {target}")
             return ability.damage
 
         else:
+            self.logger.debug(
+                f"Cannot use {ability_name}, ability not found or on cooldown."
+            )
             return -1
 
     def apply_cc(self, cc_type: str, duration: float):
@@ -228,3 +232,13 @@ class Unit:
             return False
 
         return self.abilities.get(ability_name).can_use(time.time())
+
+    def distance_to_target(self, target: Optional["Unit"]) -> float:
+        if target is None:
+            self.logger.warning(f"Tried to calculate distance without target...")
+            return 0
+
+        # use l2 norm
+        dx = (self.pos[0] - target.pos[0]) ** 2
+        dy = (self.pos[1] - target.pos[1]) ** 2
+        return (dx + dy) ** 0.5
