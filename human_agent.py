@@ -1,6 +1,6 @@
 import pygame as pg
 
-from agent import Agent
+from agent import Agent, Action
 
 
 class HumanAgent(Agent):
@@ -9,25 +9,29 @@ class HumanAgent(Agent):
 
     def choose_action(self, game_state):
         keys = pg.key.get_pressed()
-        actions = []
+        move_direction = [0, 0]
 
         if keys[pg.K_w]:
-            actions.append("move_up")
+            move_direction[1] -= 1
         if keys[pg.K_s]:
-            actions.append("move_down")
+            move_direction[1] += 1
         if keys[pg.K_a]:
-            actions.append("move_left")
+            move_direction[0] -= 1
         if keys[pg.K_d]:
-            actions.append("move_right")
+            move_direction[0] += 1
+
+        ability_name = None
         if keys[pg.K_t] and not self.unit.casting_ability:
-            actions.append("cast_magic_missile")
-        if keys[pg.K_1]:
-            actions.append("use_snare")
-        if keys[pg.K_2]:
-            actions.append("use_root")
-        if keys[pg.K_3]:
-            actions.append("use_stun")
+            ability_name = "magic_missile"
+        elif keys[pg.K_1]:
+            ability_name = "snare"
+        elif keys[pg.K_2]:
+            ability_name = "root"
+        elif keys[pg.K_3]:
+            ability_name = "stun"
 
-        self.unit.logger.debug(f"choose_actions({game_state}) -> {actions}")
+        self.unit.logger.debug(
+            f"HUMAN choose_actions({game_state}) -> move: {move_direction}, ability: {ability_name}"
+        )
 
-        return actions
+        return Action(move_direction, ability_name)

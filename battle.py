@@ -48,7 +48,7 @@ class Battle:
         if not self.paused:
             for unit in self.units:
                 actions = unit.agent.choose_action(self.get_game_state())
-                unit.perform_actions(actions)
+                unit.perform_actions(actions, dt)
 
             # Update casting and CC effects
             for unit in self.units:

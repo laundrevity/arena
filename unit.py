@@ -4,7 +4,7 @@ import math
 import time
 
 from ability import Ability, Projectile
-from agent import Agent
+from agent import Agent, Action
 from human_agent import HumanAgent
 from ai_agent import AIAgent
 
@@ -40,25 +40,24 @@ class Unit:
         self.logger = logger
         self.agent = HumanAgent(self) if player else AIAgent(self)
 
-    def perform_actions(self, actions, dt: float = 0):
-        for action in actions:
-            if action == "move_up":
-                self.move([0, -1], dt)
-            elif action == "move_down":
-                self.move([0, 1], dt)
-            elif action == "move_left":
-                self.move([-1, 0], dt)
-            elif action == "move_right":
-                self.move([1, 0], dt)
-            elif action.startswith("cast_"):
-                ability_name = action.split("_")[1]
+    def perform_actions(self, action: Action, dt: float):
+        self.logger.debug(
+            f"Performing actions: move: {action.move_direction}, ability: {action.ability_name} for {self.player=}"
+        )
+
+        if action.move_direction != [0, 0]:
+            self.move(action.move_direction, dt)
+
+        if action.ability_name:
+            if action.ability_name.startswith("cast_"):
+                ability_name = action.ability_name.split("_")[1]
                 self.start_casting(ability_name, self.target)
-            elif action.startswith("use_"):
-                ability_name = action.split("_")[1]
+            elif action.ability_name.startswith("use_"):
+                ability_name = action.ability_name.split("_")[1]
                 self.use_ability(ability_name, self.target)
-            elif action == "move_towards_target":
+            elif action.ability_name == "move_towards_target":
                 self.move_towards(self.target.pos, dt)
-            elif action == "melee_attack":
+            elif action.ability_name == "melee_attack":
                 self.use_ability("melee_attack", self.target)
 
     def get_abilities_for_role(self, role: str):
@@ -137,6 +136,8 @@ class Unit:
         self.pos[0] += dx
         self.pos[1] += dy
 
+        self.logger.debug(f"move: {direction=}, {self.speed=}, {dt=}, {dx=}, {dy=}")
+
         if self.casting_ability:
             self.cancel_cast()
 
@@ -154,10 +155,14 @@ class Unit:
             self.casting_ability.cast_time_elapsed = 0
             # set target to remember for when cast completes
             self.target = target
+            self.logger.debug(f"Started casting {ability_name} on target {target}")
 
     def update_cast(self, dt: float):
         if self.casting_ability:
             self.casting_ability.cast_time_elapsed += dt
+            self.logger.debug(
+                f"Updating cast for {self.casting_ability.name}, elapsed: {self.casting_ability.cast_time_elapsed}"
+            )
             if self.casting_ability.cast_time_elapsed >= self.casting_ability.cast_time:
                 if self.target is None:
                     self.logger.info("Cannot complete cast - no valid target!")
@@ -169,6 +174,7 @@ class Unit:
                 )
                 self.completed_ability = self.casting_ability
                 self.casting_ability = None
+                self.logger.debug(f"Completed casting {self.completed_ability.name}")
                 return True  # indicate cast completion
         return False  # cast not completed
 
