@@ -1,53 +1,34 @@
-import argparse
-import logging
-
-from game import Game
-from logger_setup import setup_logger
+from state import GameState
+from unit import Unit
+from ability import Fireball
+from aura import Aura
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Arena Game")
-    parser.add_argument(
-        "--debug",
-        type=str,
-        default="INFO",
-        help="Set the logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
-    )
-    parser.add_argument(
-        "--bt",
-        type=int,
-        default=1,
-        help="Set the battle type (1: Human vs AI, 2: AI vs AI)`",
-    )
-    parser.add_argument(
-        "--p1",
-        type=int,
-        default=1,
-        help="Set the player1 role (1: Caster, 2: Melee)`",
-    )
-    parser.add_argument(
-        "--p2",
-        type=int,
-        default=2,
-        help="Set the player2 role (1: Caster, 2: Melee)`",
+    game_state = GameState()
+
+    unit1 = Unit(uid=1, hp=100)
+    unit2 = Unit(uid=2, hp=100)
+
+    fireball = Fireball(dmg=30, cast_time=1.0, src=1, dst=2)
+    dot_aura = Aura(
+        name="Burn",
+        duration=5,
+        positive=False,
+        effect=lambda state, unit: setattr(unit, "hp", unit.hp - 5),
     )
 
-    args = parser.parse_args()
+    unit1.add_ability(fireball)
+    game_state.add_unit(unit1)
+    game_state.add_unit(unit2)
 
-    # Convert logging level from string to logging constant
-    log_level = getattr(logging, args.debug.upper(), logging.INFO)
-    logger = setup_logger("arena_game", log_level)
-    logger.info("Starting the game...")
+    unit2.add_aura(dot_aura, game_state)
 
-    battle_config = {
-        "battle_type": args.bt,
-        "player_role": args.p1,
-        "ai_role": args.p2,
-    }
+    fireball(game_state)
+    game_state.update(dt=1.0)
 
-    g = Game(logger, config=battle_config)
-    g.run()
-    logger.info("Game has ended.")
+    for unit in game_state.units:
+        print(f"Unit {unit.uid} HP: {unit.hp}")
 
 
 if __name__ == "__main__":
